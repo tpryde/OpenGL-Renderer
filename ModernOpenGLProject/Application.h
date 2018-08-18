@@ -27,6 +27,8 @@ class Application
 	static void KeyCallback (GLFWwindow* window, int key, int scancode, int action, int mods);
 	static void MouseCallback (GLFWwindow* window, double xpos, double ypos);
 
+	void ProcessInputs (bool& ExitCondition);
+
 public:
 	Application (int Width, int Height, const char* Title, bool FullScreen = false);
 	~Application ();

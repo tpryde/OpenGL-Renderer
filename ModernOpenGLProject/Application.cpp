@@ -107,39 +107,41 @@ void Application::InitGameCore ()
 void Application::Run ()
 {
 	bool done = false;
-	 // GameCore is dependent on window scope. Bad design with hidden problems
-	  // Create and initialize our GameCore object.
-	
 
-	double lasttime = MyGetSystemTime ();
+	auto previous_time = std::chrono::high_resolution_clock::now ();
+	double lag = 0.0;
 
-	// Main loop
 	while (!glfwWindowShouldClose (m_window) && !done)
 	{
-		double currtime = MyGetSystemTime ();
-		double timepassed = currtime - lasttime;
-		lasttime = currtime;
+		auto current_time = std::chrono::high_resolution_clock::now ();
+
+		std::chrono::duration<double, std::milli> elapsed = current_time - previous_time;
+		previous_time = current_time;
+
+		lag += elapsed.count ();
 
 		glfwPollEvents ();
 
+		ProcessInputs (done);
 
-		if (m_KeyStates[GLFW_KEY_ESCAPE])
+		while (lag >= MS_PER_UPDATE)
 		{
-			done = true;
+			m_GameCore->Tick (MS_PER_UPDATE);
+			lag -= MS_PER_UPDATE;
 		}
 
-
-
- 		m_GameCore->Tick (timepassed);
 		m_GameCore->OnDrawFrame ();
 
 		glfwSwapBuffers (m_window);
-
 	}
+
 	m_GameCore = nullptr;
 }
 
-
+void Application::ProcessInputs (bool& ExitCondition)
+{
+	ExitCondition = m_KeyStates[GLFW_KEY_ESCAPE];
+}
 
 void APIENTRY Application::GLMessageCallback (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {

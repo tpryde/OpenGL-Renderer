@@ -1,19 +1,9 @@
 #pragma once
 
-struct vector2
-{
-	float x, y;
-};
-
-struct vector3
-{
-	float x, y, z;
-};
-
 struct VertexDef
 {
-	vector2 pos;
-	vector3 color;
+	glm::vec2 pos;
+	glm::vec3 color;
 };
 
 class GameCore

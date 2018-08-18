@@ -64,8 +64,3 @@ char* LoadCompleteFile(const char* filename)
 
     return nullptr;
 }
-
-double MyGetSystemTime()
-{
-	return std::chrono::high_resolution_clock::now ().time_since_epoch ().count ();
-}

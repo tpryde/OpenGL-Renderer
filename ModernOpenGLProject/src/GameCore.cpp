@@ -30,7 +30,7 @@ void GameCore::OneTimeInit()
 void GameCore::Tick(double TimePassed)
 {
 	uniform += TimePassed;
-	rotation += TimePassed;
+	rotation += TimePassed * 0.001;
 
 }
 
@@ -179,8 +179,6 @@ void GameCore::DrawTriangleWithUniform()
 	//glEnable( GL_CULL_FACE ); // by default culls back
 	//glCullFace( GL_FRONT_AND_BACK ); // used to cull a desired face (Takes GL_FRONT, GL_BACK and GL_FRONT_AND_BACK)
     glBindBuffer( GL_ARRAY_BUFFER, m_VBO );
-
-	
 
     glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, 0, 0 );
     glEnableVertexAttribArray( 0 );
