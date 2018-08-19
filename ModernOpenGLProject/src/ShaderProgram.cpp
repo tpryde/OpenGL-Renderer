@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "ShaderProgram.h"
+#include <glm\gtc\type_ptr.hpp>
 
 ShaderProgram::ShaderProgram()
 {
@@ -61,4 +62,14 @@ GLuint ShaderProgram::CreateShader(GLenum type, const char* source)
 void ShaderProgram::Cleanup()
 {
 
+}
+
+void ShaderProgram::UseProgram ()
+{
+	glUseProgram (m_ProgramHandle);
+}
+
+void ShaderProgram::SetMat4 (const std::string& name, const glm::mat4& value)
+{
+	glUniformMatrix4fv (glGetUniformLocation (m_ProgramHandle, name.c_str ()), 1, GL_FALSE, glm::value_ptr (value));
 }

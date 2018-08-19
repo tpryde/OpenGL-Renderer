@@ -164,6 +164,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="AutomataGrid.h" />
     <ClInclude Include="include\GameCore.h" />
     <ClInclude Include="include\Helpers.h" />
     <ClInclude Include="include\ShaderProgram.h" />
@@ -172,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="AutomataGrid.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\GameCore.cpp" />
     <ClCompile Include="src\glad.c">

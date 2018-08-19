@@ -3,10 +3,9 @@
 
 
 Application::Application (int Width, int Height, const char* Title, bool FullScreen) :
+m_WinSize (Width, Height),
  m_WindowIsActive (true),
  m_FullscreenMode (FullScreen),
- m_WindowWidth (Width),
- m_WindowHeight (Height),
  m_WindowTitle (Title)
 {
 	Init ();
@@ -16,7 +15,7 @@ Application::Application (int Width, int Height, const char* Title, bool FullScr
 Application::~Application ()
 {
 
-	glfwDestroyWindow (m_window);
+	glfwDestroyWindow (m_Window);
 
 	glfwTerminate ();
 
@@ -46,22 +45,22 @@ void Application::InitWindow ()
 		monitor = glfwGetPrimaryMonitor ();
 	}
 
-	m_window = glfwCreateWindow (m_WindowWidth, m_WindowHeight, m_WindowTitle.c_str (), monitor, nullptr);
+	m_Window = glfwCreateWindow (m_WinSize.m_WidthPixel, m_WinSize.m_HeightPixel, m_WindowTitle.c_str (), monitor, nullptr);
 
-	if (!m_window)
+	if (!m_Window)
 	{
 		throw std::runtime_error ("Failed to create window.");
 	}
 
-	glfwMakeContextCurrent (m_window);
+	glfwMakeContextCurrent (m_Window);
 
 	glfwSwapInterval (LIMIT_FPS);
 
-	glfwSetWindowUserPointer (m_window, this);
-	glfwSetFramebufferSizeCallback (m_window, FrameBufferSizeCallback);
-	glfwSetKeyCallback (m_window, KeyCallback);
-	glfwSetCursorPosCallback (m_window, MouseCallback);
-	glfwSetWindowIconifyCallback (m_window, WindowIconifyCallback);
+	glfwSetWindowUserPointer (m_Window, this);
+	glfwSetFramebufferSizeCallback (m_Window, FrameBufferSizeCallback);
+	glfwSetKeyCallback (m_Window, KeyCallback);
+	glfwSetCursorPosCallback (m_Window, MouseCallback);
+	glfwSetWindowIconifyCallback (m_Window, WindowIconifyCallback);
 
 }
 
@@ -78,7 +77,7 @@ void Application::InitGraphics ()
 	glEnable (GL_DEBUG_OUTPUT);
 	glDebugMessageCallback (GLMessageCallback, 0);
 
-	ResizeGLScene (m_WindowWidth, m_WindowHeight);  // Set Up Our Perspective GL Screen
+	ResizeGLScene (m_WinSize.m_WidthPixel, m_WinSize.m_HeightPixel);  // Set Up Our Perspective GL Screen
 }
 
 void Application::ResizeGLScene (GLsizei width, GLsizei height)
@@ -86,22 +85,19 @@ void Application::ResizeGLScene (GLsizei width, GLsizei height)
 	if (height <= 0) height = 1;
 	if (width <= 0) width = 1;
 
-	m_WindowWidth = width;
-	m_WindowHeight = height;
+	m_WinSize.m_WidthPixel = width;
+	m_WinSize.m_HeightPixel = height;
 
 	if (m_GameCore)
 	{
-		m_GameCore->OnSurfaceChanged (width, height);
+		m_GameCore->OnSurfaceChanged (m_WinSize, width, height);
 	}
 		
 }
 
 void Application::InitGameCore ()
 {
-	m_GameCore = std::make_unique<GameCore> ();
-
-	m_GameCore->OneTimeInit ();
-	m_GameCore->OnSurfaceChanged (m_WindowWidth, m_WindowHeight);
+	m_GameCore = std::make_unique<GameCore> (m_WinSize);
 }
 
 void Application::Run ()
@@ -111,7 +107,7 @@ void Application::Run ()
 	auto previous_time = std::chrono::high_resolution_clock::now ();
 	double lag = 0.0;
 
-	while (!glfwWindowShouldClose (m_window) && !done)
+	while (!glfwWindowShouldClose (m_Window) && !done)
 	{
 		auto current_time = std::chrono::high_resolution_clock::now ();
 
@@ -132,7 +128,7 @@ void Application::Run ()
 
 		m_GameCore->OnDrawFrame ();
 
-		glfwSwapBuffers (m_window);
+		glfwSwapBuffers (m_Window);
 	}
 
 	m_GameCore = nullptr;
@@ -143,11 +139,43 @@ void Application::ProcessInputs (bool& ExitCondition)
 	ExitCondition = m_KeyStates[GLFW_KEY_ESCAPE];
 }
 
+
+std::string SeverityType (GLenum severity)
+{
+	switch (severity)
+	{
+	case GL_DEBUG_SEVERITY_NOTIFICATION: return "Info";
+	case GL_DEBUG_SEVERITY_LOW: return "Low";
+	case GL_DEBUG_SEVERITY_MEDIUM: return "Medium";
+	case GL_DEBUG_SEVERITY_HIGH: return "High";
+	default: return "Severity Unknown";
+	}
+	
+}
+
+std::string MessageType (GLenum type)
+{
+	switch (type)
+	{
+	case GL_DEBUG_TYPE_ERROR: return "Error";
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "Deprecated";
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "Undefined Behaviour";
+	case GL_DEBUG_TYPE_PORTABILITY: return "Portability";
+	case GL_DEBUG_TYPE_PERFORMANCE: return "Performance";
+	case GL_DEBUG_TYPE_MARKER: return "Marker";
+	case GL_DEBUG_TYPE_PUSH_GROUP: return "Group Push";
+	case GL_DEBUG_TYPE_POP_GROUP: return "Group Pop";
+	case GL_DEBUG_TYPE_OTHER: return "Other";
+	default: return "Unknown Message Type";
+	}
+}
+
 void APIENTRY Application::GLMessageCallback (GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam)
 {
-	fprintf (stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
-		(type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
-		type, severity, message);
+	std::cerr << "GL CALLBACK: " << (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "") <<
+	    " type = " << MessageType (type) <<
+		", severity = " << SeverityType (severity) <<
+		", message = " << message << std::endl;
 }
 
 void Application::WindowIconifyCallback (GLFWwindow* window, int iconified)

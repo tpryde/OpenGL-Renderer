@@ -1,42 +1,28 @@
 #pragma once
+#include "AutomataGrid.h"
 
-struct VertexDef
-{
-	glm::vec2 pos;
-	glm::vec3 color;
-};
+struct WindowSize;
 
 class GameCore
 {
 public:
-    GLuint m_VBO;
-	GLuint m_IBO;
-	std::unique_ptr<ShaderProgram> m_pShader;
+   
+	std::unique_ptr<AutomataGrid> m_GameGrid;
 
-	GLuint m_QuadVBO;
-	GLuint m_QuadIBO;
+	glm::mat4 m_ProjMat;
+	glm::mat4 m_ViewMat;
+
+	bool m_IsStaleView; //Set to true whenever view is changed
 
 public:
-    GameCore();
-    virtual ~GameCore();
+    explicit GameCore(WindowSize& WinSize);
+    ~GameCore();
 
-    virtual void OneTimeInit();
-    virtual void Tick(double TimePassed);
+    void OneTimeInit();
+    void Tick(double TimePassed);
 
-    virtual void OnSurfaceChanged(unsigned int width, unsigned int height);
-    void GenerateBuffers();
+    void OnSurfaceChanged(WindowSize& WinSize, int width, int height);
 
-    virtual void OnDrawFrame();
+    void OnDrawFrame();
 
-	void QuadGenerateBuffers();
-	void QuadDraw();
-	void DrawTriangleWithUniform();
-
-private:
-	VertexDef* Vertices;
-	GLushort* Indices;
-
-	float uniform;
-	float rotation;
-	unsigned int input;
 };
