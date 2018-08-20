@@ -59,7 +59,8 @@ void Application::InitWindow ()
 	glfwSetWindowUserPointer (m_Window, this);
 	glfwSetFramebufferSizeCallback (m_Window, FrameBufferSizeCallback);
 	glfwSetKeyCallback (m_Window, KeyCallback);
-	glfwSetCursorPosCallback (m_Window, MouseCallback);
+	glfwSetCursorPosCallback (m_Window, MouseMoveCallback);
+	glfwSetMouseButtonCallback (m_Window, MouseButtonCallback);
 	glfwSetWindowIconifyCallback (m_Window, WindowIconifyCallback);
 
 }
@@ -137,6 +138,7 @@ void Application::Run ()
 void Application::ProcessInputs (bool& ExitCondition)
 {
 	ExitCondition = m_KeyStates[GLFW_KEY_ESCAPE];
+
 }
 
 
@@ -215,6 +217,13 @@ void Application::KeyCallback (GLFWwindow* window, int key, int scancode, int ac
 	}
 }
 
-void Application::MouseCallback (GLFWwindow* window, double xpos, double ypos)
+void Application::MouseMoveCallback (GLFWwindow* window, double xpos, double ypos)
 {
+	auto ThisApp = reinterpret_cast<Application*> (glfwGetWindowUserPointer (window));
+}
+
+void Application::MouseButtonCallback (GLFWwindow* window, int button, int action, int mods)
+{
+	auto ThisApp = reinterpret_cast<Application*> (glfwGetWindowUserPointer (window));
+	
 }

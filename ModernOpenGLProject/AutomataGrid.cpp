@@ -3,6 +3,16 @@
 #include <glm/gtc/epsilon.hpp>
 #include <random>
 
+Quad::Quad (int GridLength) :
+	Scale ((DEFAULT_BOUND - DEFAULT_OFFSET - DEFAULT_PADDING) / static_cast<float> (GridLength)),
+	Vertices{ glm::vec3{  0.5f,  0.5f, 0.0f}  * DEFAULT_BOUND / static_cast<float> (GridLength),
+			   glm::vec3{  0.5f, -0.5f, 0.0f} * DEFAULT_BOUND / static_cast<float> (GridLength),
+			   glm::vec3{ -0.5f, -0.5f, 0.0f} * DEFAULT_BOUND / static_cast<float> (GridLength),
+			   glm::vec3{ -0.5f,  0.5f, 0.0f} * DEFAULT_BOUND / static_cast<float> (GridLength) },
+	Indices{ 0, 1, 2, 0, 2, 3 }
+{
+}
+
 void Quad::BindAttributeDescription (GLuint vao, GLuint vbo)
 {
 	glBindVertexArray (vao);
@@ -38,9 +48,10 @@ void AutomataCell::BindAttributeDescription (GLuint vao, GLuint vbo)
 AutomataGrid::AutomataGrid (int GridLength, const glm::mat4& ProjMat, const glm::mat4& ViewMat) :
 	m_pShader (std::make_unique<ShaderProgram> ()),
 	m_GridLength (GridLength),
-	m_LocalQuad {},
+	m_LocalQuad (GridLength),
 	m_ModelMat (1.0f),
-	m_IsModelMatStale (false)
+	m_IsModelMatStale (false),
+	m_TimePassed (0.0f)
 {
 	InitializeAutomataGridProgram (ProjMat, ViewMat);
 
@@ -120,24 +131,78 @@ void AutomataGrid::CreateVertexData ()
 	glBindVertexArray (0);
 }
 
-
-void AutomataGrid::CreateInstanceData ()
+void AutomataGrid::UpdateInstanceData ()
 {
-	for (int i = 0; i < m_GridLength; ++i)
-	{
-		for (int j = 0; j < m_GridLength; ++j)
-		{ 
-			const float x = static_cast<float> (i) - static_cast<float> (m_GridLength - 1) / 2.0f + i * 0.1f;
-			const float y = static_cast<float> (j) - static_cast<float> (m_GridLength - 1) / 2.0f + j * 0.1f;
-
-			m_Grid.push_back ({ glm::vec3{ x, y, 0.0f }, glm::vec3{ 1.0f, 1.0f, 1.0f } });
-		}
-	}
-
 	glBindVertexArray (m_vao);
 	glBindBuffer (GL_ARRAY_BUFFER, m_instance_vbo);
 	glBufferData (GL_ARRAY_BUFFER, sizeof (AutomataCell) * m_Grid.size (), m_Grid.data (), GL_DYNAMIC_DRAW);
 
 	glBindBuffer (GL_ARRAY_BUFFER, 0);
 	glBindVertexArray (0);
+}
+
+void AutomataGrid::CreateInstanceData ()
+{
+	std::uniform_int_distribution<int> ub (0, 1);
+	std::random_device rd;
+
+	for (int i = 0; i < m_GridLength; ++i)
+	{
+		for (int j = 0; j < m_GridLength; ++j)
+		{ 
+			const float x = m_LocalQuad.Scale * (static_cast<float> (j) - static_cast<float> (m_GridLength - 1) / 2.0f + static_cast<float> (j) * DEFAULT_OFFSET / m_GridLength);
+			const float y = m_LocalQuad.Scale * (static_cast<float> (i) - static_cast<float> (m_GridLength - 1) / 2.0f + static_cast<float> (i) * DEFAULT_OFFSET / m_GridLength);
+
+			m_Grid.push_back ({ glm::vec3{ x, y, 0.0f }, (ub(rd) ? ALIVE : DEAD) });
+		}
+	}
+
+	UpdateInstanceData ();
+}
+
+void AutomataGrid::StepLife (double delta)
+{
+	m_TimePassed += delta;
+
+	if (m_TimePassed < SECONDS_PER_CYCLE) return;
+
+	m_TimePassed -= SECONDS_PER_CYCLE;
+
+	//perform GameOfLifeCycle
+
+	auto OldGrid = m_Grid;
+
+	for (int i = 0; i < m_GridLength; ++i)
+	{
+		for (int j = 0; j < m_GridLength; ++j)
+		{
+			const auto GridLength = m_GridLength;
+			const auto Idx = [&GridLength](auto Row, auto Col) {return Row * GridLength + Col; };
+
+			auto& Cell = m_Grid[Idx(i,j)];
+
+			int LiveNeighbourCount = 0;
+
+			if (i-1 > 0          && j-1>0          && OldGrid[Idx(i-1,j-1)].Color == ALIVE) ++LiveNeighbourCount;
+			if (i-1 > 0		         			   && OldGrid[Idx(i-1,j+0)].Color == ALIVE) ++LiveNeighbourCount;
+			if (i-1 > 0          && j+1<GridLength && OldGrid[Idx(i-1,j+1)].Color == ALIVE) ++LiveNeighbourCount;
+			if (                    j-1>0          && OldGrid[Idx(i+0,j-1)].Color == ALIVE) ++LiveNeighbourCount;
+			if (                    j+1<GridLength && OldGrid[Idx(i+0,j+1)].Color == ALIVE) ++LiveNeighbourCount;
+			if (i+1 < GridLength && j-1>0          && OldGrid[Idx(i+1,j-1)].Color == ALIVE) ++LiveNeighbourCount;
+			if (i+1 < GridLength     			   && OldGrid[Idx(i+1,j+0)].Color == ALIVE) ++LiveNeighbourCount;
+			if (i+1 < GridLength && j+1<GridLength && OldGrid[Idx(i+1,j+1)].Color == ALIVE) ++LiveNeighbourCount;
+
+
+			if (Cell.Color == ALIVE)
+			{
+				if (LiveNeighbourCount != 2 && LiveNeighbourCount != 3) Cell.Color = DEAD;
+			}
+			else
+			{
+				if (LiveNeighbourCount == 3) Cell.Color = ALIVE;
+			}
+		}
+	}
+
+	UpdateInstanceData ();
 }

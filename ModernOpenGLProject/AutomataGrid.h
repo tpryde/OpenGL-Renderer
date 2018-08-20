@@ -8,16 +8,11 @@ struct Quad
 
 	const std::vector<unsigned int> Indices;
 
+	const float Scale = 1.0f;
+
 	static void BindAttributeDescription (GLuint vao, GLuint vbo);
 
-	Quad () :
-		Vertices { glm::vec3{  0.5f,  0.5f, 0.0f},
-				   glm::vec3{  0.5f, -0.5f, 0.0f},
-				   glm::vec3{ -0.5f, -0.5f, 0.0f},
-				   glm::vec3{ -0.5f,  0.5f, 0.0f} },
-		Indices { 0, 1, 2, 0, 2, 3 }
-	{
-	}
+	explicit Quad (int GridLength);
 };
 
 
@@ -46,7 +41,12 @@ class AutomataGrid
 	std::vector<AutomataCell> m_Grid;
 	const Quad m_LocalQuad;
 
+	double m_TimePassed;
+
+
+
 	void CreateVertexData ();
+	void UpdateInstanceData ();
 	void CreateInstanceData ();
 
 public:
@@ -59,5 +59,7 @@ public:
 
 	void Resize (const glm::mat4& ProjMat) const;
 	void Render (const glm::mat4* ViewMat);
+
+	void StepLife (double delta);
 };
 

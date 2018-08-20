@@ -25,12 +25,12 @@ void GameCore::OneTimeInit()
 							 glm::vec3 (0.0f, 1.0f, 0.0f)
 							);
 							
-	m_GameGrid = std::make_unique<AutomataGrid> (10, m_ProjMat, m_ViewMat); // 20 * 20 m_Grid
+	m_GameGrid = std::make_unique<AutomataGrid> (GRID_SIZE, m_ProjMat, m_ViewMat); // 20 * 20 m_Grid
 }
 
 void GameCore::Tick(double TimePassed)
 {
-
+	m_GameGrid->StepLife (TimePassed);
 }
 
 void GameCore::OnSurfaceChanged(WindowSize& WinSize, int width, int height)
